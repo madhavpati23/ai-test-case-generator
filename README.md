@@ -10,18 +10,26 @@ case, you describe the feature and get a structured first draft of the suite
 **validated against a schema before it's written** — a flaky model can never slip
 a malformed case into your suite.
 
+It's built to be a **team standard, not a one-off script**. A documented method
+([TESTING_PLAYBOOK.md](TESTING_PLAYBOOK.md)) defines the risk taxonomy, a severity
+rubric, and a ship / no-ship policy; a **coverage standard** ([taxonomy.py](src/test_case_generator/taxonomy.py))
+is enforced by the tool and CI so "did we test enough?" is policy, not opinion.
+
 ```text
 $ python -m test_case_generator generate --feature "password reset email" --out-dir prompts
 Generator   : mock
-Generated   : 8 raw case(s)
-Valid       : 8
-Wrote 8 case(s) across 6 file(s):
-   prompts/consistency.yaml
-   prompts/data_validation.yaml
-   prompts/edge_cases.yaml
-   prompts/hallucination.yaml
-   prompts/robustness.yaml
-   prompts/safety.yaml
+Generated   : 13 raw case(s)
+Valid       : 13
+Wrote 13 case(s) across 7 file(s) to prompts
+------------------------------------------------------------
+  COVERAGE vs STANDARD
+------------------------------------------------------------
+  [ok  ] edge_cases       2/2   (REQUIRED)
+  [ok  ] hallucination    2/2   (REQUIRED)
+  [ok  ] robustness       2/1   (REQUIRED)
+  [ok  ] safety           3/3   (REQUIRED)
+  ...
+  RESULT: meets the required coverage standard.
 ```
 
 ## How it fits the toolchain
@@ -64,9 +72,36 @@ export ANTHROPIC_API_KEY=sk-ant-...
 python -m test_case_generator generate --feature "support chatbot answering billing questions" --out-dir prompts
 ```
 
+## Coverage standard (the team bar)
+
+The tool measures every suite against the required risk categories and can fail
+CI if a suite is below standard:
+
+```bash
+python -m test_case_generator coverage --prompts prompts --strict
+```
+
+```text
+------------------------------------------------------------
+  COVERAGE vs STANDARD
+------------------------------------------------------------
+  [ok  ] edge_cases       2/2   (REQUIRED)
+  [ok  ] hallucination    2/2   (REQUIRED)
+  [ok  ] robustness       2/1   (REQUIRED)
+  [ok  ] safety           3/3   (REQUIRED)
+  [--  ] accuracy         0/2   (optional)
+  ...
+  RESULT: meets the required coverage standard.
+```
+
+`generate --strict` and `coverage --strict` exit `2` when required categories
+are unmet — wire either into CI as a gate. The bar lives in
+[`taxonomy.py`](src/test_case_generator/taxonomy.py); the rationale is in the
+[playbook](TESTING_PLAYBOOK.md).
+
 ## The schema (the contract)
 
-Each case is `{id, category, prompt, validator, args}`.
+Each case is `{id, category, prompt, validator, args, severity}`.
 
 | Field | Allowed values |
 |-------|----------------|

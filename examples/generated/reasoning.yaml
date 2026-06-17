@@ -1,0 +1,8 @@
+category: reasoning
+cases:
+- id: password-reset-email-reasoning-dependency
+  severity: medium
+  prompt: In "password reset email", if step B depends on step A and A fails, what happens to B?
+  validator: regex
+  args:
+    pattern: skip|not.*run|fail|block|halt|abort|won'?t|depend

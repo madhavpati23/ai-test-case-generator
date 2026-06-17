@@ -1,7 +1,14 @@
 category: edge_cases
 cases:
 - id: password-reset-email-edge-empty-input
+  severity: medium
   prompt: In the "password reset email" feature, what happens when the input is empty or missing?
   validator: regex
   args:
     pattern: error|invalid|empty|missing|reject|handle|required
+- id: password-reset-email-edge-boundary
+  severity: medium
+  prompt: In "password reset email", what happens when a value exceeds the maximum allowed length?
+  validator: regex
+  args:
+    pattern: error|reject|truncat|invalid|limit|too long|maximum|handle

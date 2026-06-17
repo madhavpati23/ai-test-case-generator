@@ -1,39 +1,51 @@
 """Command-line entrypoint.
 
   python -m test_case_generator generate --feature "password reset email" --out-dir prompts
-  python -m test_case_generator generate --spec feature.txt --out-dir prompts
+  python -m test_case_generator generate --spec feature.txt --out-dir prompts [--strict]
+  python -m test_case_generator coverage --prompts prompts [--strict]
 
-Generates cases (mock by default, Claude if ANTHROPIC_API_KEY is set), validates
-every one against the schema, drops invalid cases (reporting why), and writes the
-survivors as prompt-regression-suite YAML.
+`generate` creates cases (mock by default, Claude if ANTHROPIC_API_KEY is set),
+validates each against the schema, writes the survivors as prompt-regression-suite
+YAML, and reports coverage against the standard in taxonomy.py.
+
+`coverage` assesses an existing suite directory against the same standard.
+
+Exit codes (so CI can gate on them):
+  0  ok
+  1  nothing valid to write / bad input
+  2  --strict was set and the suite is below the required coverage standard
 """
 
 from __future__ import annotations
 
 import argparse
+import glob
+import os
 import sys
 
+import yaml
+
+from . import coverage as cov
 from .generators import get_generator
-from .schema import validate_all
+from .schema import Case, validate_all
 from .serialize import write_suite
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="test_case_generator")
-    sub = parser.add_subparsers(dest="command", required=True)
+def _load_cases(prompts_dir: str) -> list[Case]:
+    raw: list[dict] = []
+    for path in sorted(glob.glob(os.path.join(prompts_dir, "*.yaml"))):
+        doc = yaml.safe_load(open(path, encoding="utf-8")) or {}
+        category = doc.get("category", os.path.splitext(os.path.basename(path))[0])
+        for case in doc.get("cases", []):
+            case.setdefault("category", category)
+            raw.append(case)
+    return validate_all(raw).cases
 
-    gen = sub.add_parser("generate", help="generate a test suite for a feature")
-    src = gen.add_mutually_exclusive_group(required=True)
-    src.add_argument("--feature", help="feature/requirement described inline")
-    src.add_argument("--spec", help="path to a file describing the feature")
-    gen.add_argument("--out-dir", default="prompts", help="where to write the YAML suite")
 
-    args = parser.parse_args(argv)
-
+def _cmd_generate(args) -> int:
     feature = args.feature
     if args.spec:
-        with open(args.spec, encoding="utf-8") as fh:
-            feature = fh.read().strip()
+        feature = open(args.spec, encoding="utf-8").read().strip()
     if not feature:
         print("error: empty feature description", file=sys.stderr)
         return 1
@@ -49,16 +61,52 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Dropped     : {len(result.errors)}")
         for err in result.errors:
             print(f"   - {err}")
-
     if not result.cases:
         print("No valid cases to write.", file=sys.stderr)
         return 1
 
     paths = write_suite(result.cases, args.out_dir)
-    print(f"Wrote {len(result.cases)} case(s) across {len(paths)} file(s):")
-    for path in paths:
-        print(f"   {path}")
+    print(f"Wrote {len(result.cases)} case(s) across {len(paths)} file(s) to {args.out_dir}")
+
+    report = cov.assess(result.cases)
+    print(cov.render(report))
+    if args.strict and report.has_gaps:
+        return 2
     return 0
+
+
+def _cmd_coverage(args) -> int:
+    cases = _load_cases(args.prompts)
+    if not cases:
+        print(f"No valid cases found in {args.prompts}", file=sys.stderr)
+        return 1
+    report = cov.assess(cases)
+    print(f"Assessed {report.total_cases} case(s) in {args.prompts}")
+    print(cov.render(report))
+    if args.strict and report.has_gaps:
+        return 2
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="test_case_generator")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    gen = sub.add_parser("generate", help="generate a test suite for a feature")
+    src = gen.add_mutually_exclusive_group(required=True)
+    src.add_argument("--feature", help="feature/requirement described inline")
+    src.add_argument("--spec", help="path to a file describing the feature")
+    gen.add_argument("--out-dir", default="prompts", help="where to write the YAML suite")
+    gen.add_argument("--strict", action="store_true", help="exit 2 if below the coverage standard")
+    gen.set_defaults(func=_cmd_generate)
+
+    cvg = sub.add_parser("coverage", help="assess an existing suite against the standard")
+    cvg.add_argument("--prompts", default="prompts", help="suite directory of *.yaml")
+    cvg.add_argument("--strict", action="store_true", help="exit 2 if below the coverage standard")
+    cvg.set_defaults(func=_cmd_coverage)
+
+    args = parser.parse_args(argv)
+    return args.func(args)
 
 
 if __name__ == "__main__":

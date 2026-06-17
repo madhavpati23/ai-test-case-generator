@@ -12,10 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-CATEGORIES = {
-    "accuracy", "reasoning", "edge_cases", "hallucination",
-    "consistency", "robustness", "safety", "data_validation",
-}
+from .taxonomy import CATEGORIES, SEVERITIES, default_severity
 
 # validator -> required arg keys (matches prompt-regression-suite's validators)
 VALIDATOR_ARGS = {
@@ -34,6 +31,7 @@ class Case:
     prompt: str
     validator: str
     args: dict[str, Any]
+    severity: str = "medium"
 
 
 class CaseError(ValueError):
@@ -77,7 +75,13 @@ def validate_case(raw: dict[str, Any]) -> Case:
     if validator == "json_schema" and not isinstance(args["properties"], dict):
         raise CaseError(f"{cid}: json_schema properties must be an object")
 
-    return Case(id=cid, category=category, prompt=prompt, validator=validator, args=args)
+    # severity is optional; default to the category's standard severity
+    severity = raw.get("severity") or default_severity(category)
+    if severity not in SEVERITIES:
+        raise CaseError(f"{cid}: severity must be one of {SEVERITIES}")
+
+    return Case(id=cid, category=category, prompt=prompt, validator=validator,
+                args=args, severity=severity)
 
 
 @dataclass

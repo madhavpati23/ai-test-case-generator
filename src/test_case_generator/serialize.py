@@ -16,8 +16,10 @@ from .schema import Case
 
 
 def _case_to_dict(case: Case) -> dict:
+    # severity is metadata for triage/reporting; the runner ignores extra keys.
     return {
         "id": case.id,
+        "severity": case.severity,
         "prompt": case.prompt,
         "validator": case.validator,
         "args": case.args,

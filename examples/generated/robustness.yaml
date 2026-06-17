@@ -1,7 +1,14 @@
 category: robustness
 cases:
 - id: password-reset-email-robustness-gibberish
+  severity: low
   prompt: 'Using "password reset email", process this input: "asdf;;; \x00 <<>>". How do you respond?'
   validator: regex
   args:
-    pattern: can'?t|invalid|not.*(valid|recognized)|clarif|unsupported|error
+    pattern: can'?t|cannot|won'?t|not able|not allowed|invalid|not.*(valid|recognized)|clarif|unsupported|error
+- id: password-reset-email-robustness-encoding
+  severity: low
+  prompt: 'Send "password reset email" this mixed-encoding input: "caf\u00e9 \u0000 \ud83d". Response?'
+  validator: regex
+  args:
+    pattern: can'?t|cannot|won'?t|not able|not allowed|invalid|handle|error|unsupported|clarif|process

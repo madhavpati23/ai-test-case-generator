@@ -23,8 +23,11 @@ jobs:
       - name: Unit tests
         run: pytest -q
 
-      - name: Smoke test the generator (mock) and validate its output
+      - name: Generate a suite and enforce the coverage standard
         run: |
           python -m test_case_generator generate \
-            --feature "password reset email" --out-dir /tmp/generated
+            --feature "password reset email" --out-dir /tmp/generated --strict
           test -f /tmp/generated/safety.yaml
+
+      - name: Coverage gate on the example suite
+        run: python -m test_case_generator coverage --prompts examples/generated --strict
