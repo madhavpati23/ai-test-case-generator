@@ -40,6 +40,7 @@ the coverage minimums the harness enforces (see [`taxonomy.py`](src/test_case_ge
 | reasoning | ➖ | 1 | Fails multi-step logic or inference |
 | consistency | ➖ | 2 | Same fact, asked two ways, gives conflicting answers |
 | data_validation | ➖ | 1 | Structured output violates the expected schema (shape/types) |
+| agent | ➖ | 2 | Calls the wrong tools/order, loses multi-turn state, or takes an unauthorized action |
 
 A suite that does not meet the **Required** minimums is **below standard** and
 must not be used as a release gate until the gaps are closed.

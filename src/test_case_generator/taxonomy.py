@@ -63,6 +63,10 @@ TAXONOMY: dict[str, CategorySpec] = {
         "data_validation",
         "Structured outputs honour the expected schema (shape and types).",
         "medium", required=False, min_cases=1),
+    "agent": CategorySpec(
+        "agent",
+        "Tool-call correctness, multi-turn/stateful behaviour, and refusal of unauthorized actions.",
+        "high", required=False, min_cases=2),
 }
 
 CATEGORIES = set(TAXONOMY)
