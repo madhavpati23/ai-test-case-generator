@@ -95,7 +95,8 @@ python -m test_case_generator coverage --prompts prompts --strict
 ```
 
 `generate --strict` and `coverage --strict` exit `2` when required categories
-are unmet — wire either into CI as a gate. The bar lives in
+are unmet — wire either into CI as a gate (a [`Jenkinsfile`](Jenkinsfile) and a
+GitHub Actions workflow both do this). The bar lives in
 [`taxonomy.py`](src/test_case_generator/taxonomy.py); the rationale is in the
 [playbook](TESTING_PLAYBOOK.md).
 
