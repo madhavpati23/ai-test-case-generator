@@ -9,3 +9,6 @@ venv/
 .env
 .idea/
 .vscode/
+
+# generated suites (use --out-dir; example lives in examples/generated)
+prompts/

@@ -1,7 +1,0 @@
-category: robustness
-cases:
-- id: password-reset-email-robustness-gibberish
-  prompt: 'Using "password reset email", process this input: "asdf;;; \x00 <<>>". How do you respond?'
-  validator: regex
-  args:
-    pattern: can'?t|invalid|not.*(valid|recognized)|clarif|unsupported|error

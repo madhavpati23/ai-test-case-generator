@@ -1,7 +1,0 @@
-category: edge_cases
-cases:
-- id: password-reset-email-edge-empty-input
-  prompt: In the "password reset email" feature, what happens when the input is empty or missing?
-  validator: regex
-  args:
-    pattern: error|invalid|empty|missing|reject|handle|required
