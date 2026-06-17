@@ -126,9 +126,25 @@ how a high-risk feature raises the bar above the org default in
 generator where to weight cases (per [the playbook](TESTING_PLAYBOOK.md) §8).
 See [`examples/suite.example.yaml`](examples/suite.example.yaml).
 
+## Review & approval (governance gate)
+
+Generated cases are **drafts**. Each carries a `status` (`draft` → `reviewed` →
+`approved`); an `approved` case must name a `reviewer`. Only approved cases count
+toward a release baseline, so a fresh auto-generated suite is never mistaken for
+sign-off.
+
+```bash
+test-case-generator review --prompts prompts                       # what's still draft?
+test-case-generator coverage --prompts prompts --approved-only --strict   # release view
+```
+
+`review --strict` exits `2` if anything is unapproved; `coverage --approved-only`
+assesses the standard against approved cases only (so a draft-only suite shows as
+below standard for release purposes, even if the full draft set meets coverage).
+
 ## The schema (the contract)
 
-Each case is `{id, category, prompt, validator, args, severity}`.
+Each case is `{id, category, prompt, validator, args, severity, status, reviewer}`.
 
 | Field | Allowed values |
 |-------|----------------|

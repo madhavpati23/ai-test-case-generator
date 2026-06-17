@@ -3,7 +3,8 @@
   python -m test_case_generator generate --feature "password reset email" --out-dir prompts
   python -m test_case_generator generate --spec feature.txt --out-dir prompts [--strict]
   python -m test_case_generator generate --config suite.yaml [--strict]
-  python -m test_case_generator coverage --prompts prompts [--config suite.yaml] [--strict]
+  python -m test_case_generator coverage --prompts prompts [--config suite.yaml] [--approved-only] [--strict]
+  python -m test_case_generator review --prompts prompts [--strict]
 
 `generate` creates cases (mock by default, Claude if ANTHROPIC_API_KEY is set),
 validates each against the schema, writes the survivors as prompt-regression-suite
@@ -86,11 +87,41 @@ def _cmd_generate(args) -> int:
     return 0
 
 
+def _cmd_review(args) -> int:
+    cases = _load_cases(args.prompts)
+    if not cases:
+        print(f"No valid cases found in {args.prompts}", file=sys.stderr)
+        return 1
+    by_status: dict[str, list] = {}
+    for c in cases:
+        by_status.setdefault(c.status, []).append(c)
+
+    print(f"Review status for {args.prompts} ({len(cases)} case(s)):")
+    for status in ("approved", "reviewed", "draft"):
+        print(f"  {status:<9}: {len(by_status.get(status, []))}")
+
+    unapproved = [c for c in cases if c.status != "approved"]
+    if unapproved:
+        print(f"  Unapproved ({len(unapproved)}) -- not release-ready:")
+        for c in unapproved:
+            print(f"    [{c.status:<8}] {c.id}  ({c.severity} {c.category})")
+    else:
+        print("  All cases approved.")
+
+    if args.strict and unapproved:
+        return 2
+    return 0
+
+
 def _cmd_coverage(args) -> int:
     cases = _load_cases(args.prompts)
     if not cases:
         print(f"No valid cases found in {args.prompts}", file=sys.stderr)
         return 1
+    approved_only = getattr(args, "approved_only", False)
+    if approved_only:
+        cases = [c for c in cases if c.status == "approved"]
+        print("(release view: counting approved cases only)")
     overrides = load_config(args.config).coverage if args.config else {}
     report = cov.assess(cases, overrides)
     print(f"Assessed {report.total_cases} case(s) in {args.prompts}")
@@ -116,8 +147,15 @@ def main(argv: list[str] | None = None) -> int:
     cvg = sub.add_parser("coverage", help="assess an existing suite against the standard")
     cvg.add_argument("--prompts", default="prompts", help="suite directory of *.yaml")
     cvg.add_argument("--config", help="suite.yaml whose coverage overrides to apply")
+    cvg.add_argument("--approved-only", action="store_true",
+                     help="count only approved cases (release-baseline view)")
     cvg.add_argument("--strict", action="store_true", help="exit 2 if below the coverage standard")
     cvg.set_defaults(func=_cmd_coverage)
+
+    rev = sub.add_parser("review", help="show the review/approval status of a suite")
+    rev.add_argument("--prompts", default="prompts", help="suite directory of *.yaml")
+    rev.add_argument("--strict", action="store_true", help="exit 2 if any case is unapproved")
+    rev.set_defaults(func=_cmd_review)
 
     args = parser.parse_args(argv)
     return args.func(args)

@@ -126,8 +126,15 @@ Before a suite becomes a release gate:
 3. A second reviewer (or the lead) signs off.
 4. Commit the suite to version control; treat changes as reviewable PRs.
 
-> Status/approval fields on each case are a planned tooling addition; until then,
-> track approval in the PR review.
+The tooling enforces this: every case carries a `status` (`draft` → `reviewed` →
+`approved`) and an `approved` case must name a `reviewer`. Use `review` to see
+what's outstanding, and `coverage --approved-only` for the *release* view —
+only approved cases count toward a release baseline.
+
+```bash
+test-case-generator review --prompts prompts             # what's still draft?
+test-case-generator coverage --prompts prompts --approved-only --strict
+```
 
 ---
 

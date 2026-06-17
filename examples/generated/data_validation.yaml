@@ -2,6 +2,7 @@ category: data_validation
 cases:
 - id: password-reset-email-data-status-json
   severity: medium
+  status: draft
   prompt: 'For the "password reset email" feature, return its status as JSON: {"ok": <boolean>, "code":
     <integer>}.'
   validator: json_schema

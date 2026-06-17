@@ -2,12 +2,14 @@ category: consistency
 cases:
 - id: password-reset-email-consistency-a
   severity: low
+  status: draft
   prompt: Is the "password reset email" feature currently enabled? Answer yes or no.
   validator: regex
   args:
     pattern: \byes\b|\bno\b
 - id: password-reset-email-consistency-b
   severity: low
+  status: draft
   prompt: State whether "password reset email" is on or off in one word.
   validator: regex
   args:

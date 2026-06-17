@@ -16,14 +16,19 @@ from .schema import Case
 
 
 def _case_to_dict(case: Case) -> dict:
-    # severity is metadata for triage/reporting; the runner ignores extra keys.
-    return {
+    # severity/status/reviewer are metadata for triage and governance; the
+    # runner ignores keys it doesn't recognise.
+    d = {
         "id": case.id,
         "severity": case.severity,
+        "status": case.status,
         "prompt": case.prompt,
         "validator": case.validator,
         "args": case.args,
     }
+    if case.reviewer:
+        d["reviewer"] = case.reviewer
+    return d
 
 
 def write_suite(cases: list[Case], out_dir: str) -> list[str]:

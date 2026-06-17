@@ -23,6 +23,10 @@ VALIDATOR_ARGS = {
     "json_schema": ["properties"],
 }
 
+# Review lifecycle. Generated cases start as `draft`; only `approved` cases
+# should be promoted to a release baseline.
+STATUSES = ("draft", "reviewed", "approved")
+
 
 @dataclass(frozen=True)
 class Case:
@@ -32,6 +36,8 @@ class Case:
     validator: str
     args: dict[str, Any]
     severity: str = "medium"
+    status: str = "draft"
+    reviewer: str | None = None
 
 
 class CaseError(ValueError):
@@ -80,8 +86,17 @@ def validate_case(raw: dict[str, Any]) -> Case:
     if severity not in SEVERITIES:
         raise CaseError(f"{cid}: severity must be one of {SEVERITIES}")
 
+    status = raw.get("status") or "draft"
+    if status not in STATUSES:
+        raise CaseError(f"{cid}: status must be one of {STATUSES}")
+    reviewer = raw.get("reviewer")
+    if reviewer is not None and not isinstance(reviewer, str):
+        raise CaseError(f"{cid}: reviewer must be a string")
+    if status == "approved" and not reviewer:
+        raise CaseError(f"{cid}: an approved case must name a reviewer")
+
     return Case(id=cid, category=category, prompt=prompt, validator=validator,
-                args=args, severity=severity)
+                args=args, severity=severity, status=status, reviewer=reviewer)
 
 
 @dataclass
