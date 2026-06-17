@@ -2,7 +2,8 @@
 
   python -m test_case_generator generate --feature "password reset email" --out-dir prompts
   python -m test_case_generator generate --spec feature.txt --out-dir prompts [--strict]
-  python -m test_case_generator coverage --prompts prompts [--strict]
+  python -m test_case_generator generate --config suite.yaml [--strict]
+  python -m test_case_generator coverage --prompts prompts [--config suite.yaml] [--strict]
 
 `generate` creates cases (mock by default, Claude if ANTHROPIC_API_KEY is set),
 validates each against the schema, writes the survivors as prompt-regression-suite
@@ -26,6 +27,7 @@ import sys
 import yaml
 
 from . import coverage as cov
+from .config import load_config
 from .generators import get_generator
 from .schema import Case, validate_all
 from .serialize import write_suite
@@ -44,14 +46,23 @@ def _load_cases(prompts_dir: str) -> list[Case]:
 
 def _cmd_generate(args) -> int:
     feature = args.feature
-    if args.spec:
+    ai_type = None
+    out_dir = args.out_dir
+    overrides: dict[str, int] = {}
+
+    if args.config:
+        cfg = load_config(args.config)
+        feature, ai_type, overrides = cfg.feature, cfg.ai_type, cfg.coverage
+        # an explicit --out-dir wins over the config's default
+        out_dir = args.out_dir if args.out_dir != "prompts" else cfg.out_dir
+    elif args.spec:
         feature = open(args.spec, encoding="utf-8").read().strip()
     if not feature:
         print("error: empty feature description", file=sys.stderr)
         return 1
 
     generator = get_generator()
-    raw = generator.generate(feature)
+    raw = generator.generate(feature, ai_type)
     result = validate_all(raw)
 
     print(f"Generator   : {generator.name}")
@@ -65,10 +76,10 @@ def _cmd_generate(args) -> int:
         print("No valid cases to write.", file=sys.stderr)
         return 1
 
-    paths = write_suite(result.cases, args.out_dir)
-    print(f"Wrote {len(result.cases)} case(s) across {len(paths)} file(s) to {args.out_dir}")
+    paths = write_suite(result.cases, out_dir)
+    print(f"Wrote {len(result.cases)} case(s) across {len(paths)} file(s) to {out_dir}")
 
-    report = cov.assess(result.cases)
+    report = cov.assess(result.cases, overrides)
     print(cov.render(report))
     if args.strict and report.has_gaps:
         return 2
@@ -80,7 +91,8 @@ def _cmd_coverage(args) -> int:
     if not cases:
         print(f"No valid cases found in {args.prompts}", file=sys.stderr)
         return 1
-    report = cov.assess(cases)
+    overrides = load_config(args.config).coverage if args.config else {}
+    report = cov.assess(cases, overrides)
     print(f"Assessed {report.total_cases} case(s) in {args.prompts}")
     print(cov.render(report))
     if args.strict and report.has_gaps:
@@ -96,12 +108,14 @@ def main(argv: list[str] | None = None) -> int:
     src = gen.add_mutually_exclusive_group(required=True)
     src.add_argument("--feature", help="feature/requirement described inline")
     src.add_argument("--spec", help="path to a file describing the feature")
+    src.add_argument("--config", help="path to a suite.yaml (feature + coverage overrides)")
     gen.add_argument("--out-dir", default="prompts", help="where to write the YAML suite")
     gen.add_argument("--strict", action="store_true", help="exit 2 if below the coverage standard")
     gen.set_defaults(func=_cmd_generate)
 
     cvg = sub.add_parser("coverage", help="assess an existing suite against the standard")
     cvg.add_argument("--prompts", default="prompts", help="suite directory of *.yaml")
+    cvg.add_argument("--config", help="suite.yaml whose coverage overrides to apply")
     cvg.add_argument("--strict", action="store_true", help="exit 2 if below the coverage standard")
     cvg.set_defaults(func=_cmd_coverage)
 

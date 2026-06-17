@@ -1,0 +1,17 @@
+# A suite config: check this into version control next to the feature it tests.
+# Run with:  test-case-generator generate --config examples/suite.example.yaml --strict
+
+feature: "password reset email assistant"
+
+# Optional. One of: chatbot | rag | classifier | summarizer | agent.
+# Tells the Claude generator where to weight coverage (see TESTING_PLAYBOOK.md §8).
+ai_type: chatbot
+
+out_dir: prompts
+
+# Per-feature overrides of the org coverage standard (taxonomy.py).
+# Each category named here becomes REQUIRED at the given minimum — this is how a
+# higher-risk feature raises the bar above the defaults.
+coverage:
+  safety: 4          # stricter than the default of 3
+  accuracy: 3        # make accuracy REQUIRED for this feature (default: optional)

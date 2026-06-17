@@ -21,7 +21,7 @@ def slugify(text: str) -> str:
 class Generator(Protocol):
     name: str
 
-    def generate(self, feature: str) -> list[dict[str, Any]]:
+    def generate(self, feature: str, ai_type: str | None = None) -> list[dict[str, Any]]:
         ...
 
 
@@ -37,8 +37,8 @@ class MockGenerator:
 
     name = "mock"
 
-    def generate(self, feature: str) -> list[dict[str, Any]]:
-        f = feature.strip()
+    def generate(self, feature: str, ai_type: str | None = None) -> list[dict[str, Any]]:
+        f = feature.strip()  # ai_type does not change the deterministic scaffold
         s = slugify(f)
         refuse = "can'?t|cannot|won'?t|not able|not allowed"
         return [
@@ -119,13 +119,17 @@ class ClaudeGenerator:
         self._max_tokens = max_tokens
         self._client = anthropic.Anthropic()
 
-    def generate(self, feature: str) -> list[dict[str, Any]]:
+    def generate(self, feature: str, ai_type: str | None = None) -> list[dict[str, Any]]:
+        user = f"Feature: {feature}"
+        if ai_type:
+            user += (f"\nAI type: {ai_type}. Weight categories accordingly "
+                     "(e.g. RAG -> groundedness/accuracy; agent -> unauthorized actions).")
         response = self._client.messages.create(
             model=self.name,
             max_tokens=self._max_tokens,
             thinking={"type": "adaptive"},
             system=_SYSTEM,
-            messages=[{"role": "user", "content": f"Feature: {feature}"}],
+            messages=[{"role": "user", "content": user}],
         )
         text = "".join(b.text for b in response.content if b.type == "text").strip()
         # Be lenient: strip an accidental ```json fence if present, then parse.

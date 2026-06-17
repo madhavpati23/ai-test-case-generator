@@ -99,6 +99,32 @@ are unmet — wire either into CI as a gate. The bar lives in
 [`taxonomy.py`](src/test_case_generator/taxonomy.py); the rationale is in the
 [playbook](TESTING_PLAYBOOK.md).
 
+## Config-driven runs (`suite.yaml`)
+
+For repeatable, reviewable runs, declare the feature in a config file checked in
+next to what it tests — so the whole team generates identically:
+
+```yaml
+# suite.yaml
+feature: "password reset email assistant"
+ai_type: chatbot          # chatbot | rag | classifier | summarizer | agent
+out_dir: prompts
+coverage:                 # per-feature overrides; each becomes REQUIRED at min N
+  safety: 4               # stricter than the org default of 3
+  accuracy: 3             # make accuracy REQUIRED for this feature
+```
+
+```bash
+test-case-generator generate --config suite.yaml --strict
+test-case-generator coverage --prompts prompts --config suite.yaml --strict
+```
+
+A category named under `coverage` becomes **required** at that minimum — that's
+how a high-risk feature raises the bar above the org default in
+[`taxonomy.py`](src/test_case_generator/taxonomy.py). `ai_type` tells the Claude
+generator where to weight cases (per [the playbook](TESTING_PLAYBOOK.md) §8).
+See [`examples/suite.example.yaml`](examples/suite.example.yaml).
+
 ## The schema (the contract)
 
 Each case is `{id, category, prompt, validator, args, severity}`.
