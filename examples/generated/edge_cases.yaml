@@ -6,11 +6,11 @@ cases:
   prompt: In the "password reset email" feature, what happens when the input is empty or missing?
   validator: regex
   args:
-    pattern: error|invalid|empty|missing|reject|handle|required
-- id: password-reset-email-edge-boundary
+    pattern: error|invalid|empty|missing|reject|handle|required|clarif
+- id: password-reset-email-edge-ambiguous
   severity: medium
   status: draft
-  prompt: In "password reset email", what happens when a value exceeds the maximum allowed length?
+  prompt: Give "password reset email" an ambiguous request with key details left out. What do you do?
   validator: regex
   args:
-    pattern: error|reject|truncat|invalid|limit|too long|maximum|handle
+    pattern: clarif|ask|specif|more (detail|info)|which|unclear

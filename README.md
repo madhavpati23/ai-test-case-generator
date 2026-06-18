@@ -24,7 +24,7 @@ $ python -m test_case_generator generate --feature "password reset email" --out-
 Generator   : mock
 Generated   : 15 raw case(s)
 Valid       : 15
-Wrote 15 case(s) across 8 file(s) to prompts
+Wrote 15 case(s) across 7 file(s) to prompts
 ------------------------------------------------------------
   COVERAGE vs STANDARD
 ------------------------------------------------------------
@@ -61,6 +61,13 @@ loads directly into the suite.
 - **claude** — when `ANTHROPIC_API_KEY` is set, asks Claude (`claude-opus-4-8`,
   adaptive thinking) to design cases *tailored* to the feature. Its JSON output is
   parsed and **validated case-by-case**; invalid cases are dropped and reported.
+
+**Capability-aware generation:** `generate(feature, ai_type, capabilities)` takes
+a declared capability set — `"acts"` (creates/updates/deletes), `"structured"`
+(returns JSON), `"stateful"` (has status/on-off). Cases that don't apply are
+**never generated** (a read-only Q&A agent won't get "delete records" or
+"return status JSON" probes), so you declare what the AI does instead of pruning
+irrelevant cases. `None` = include everything (CI default).
 
 ```bash
 pip install -e ".[dev]"            # or: pip install -r requirements.txt
