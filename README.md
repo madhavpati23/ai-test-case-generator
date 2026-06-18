@@ -102,6 +102,19 @@ GitHub Actions workflow both do this). The bar lives in
 [`taxonomy.py`](src/test_case_generator/taxonomy.py); the rationale is in the
 [playbook](TESTING_PLAYBOOK.md).
 
+## Score a prompt
+
+Check how well-written a prompt is — a score, a one-line verdict, its strengths,
+and **at most 3** "consider…" pointers (none if it's already strong; no lecturing):
+
+```bash
+test-case-generator assess-prompt --text "You are an editor. Rewrite this in 3 sentences as JSON."
+# Prompt score : 100/100  (Strong)
+test-case-generator assess-prompt --file my_prompt.txt --llm   # Claude critique (needs API key)
+```
+
+Heuristic by default (offline); `--llm` uses Claude for a short critique.
+
 ## Config-driven runs (`suite.yaml`)
 
 For repeatable, reviewable runs, declare the feature in a config file checked in
