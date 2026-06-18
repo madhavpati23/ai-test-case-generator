@@ -1,8 +1,10 @@
 # ai-test-case-generator
 
 Turn a **feature or requirement** into a set of **runnable test cases** — across
-risk categories, including edge cases and safety probes — emitted as YAML that
-drops straight into [`prompt-regression-suite`](https://github.com/madhavpati23/prompt-regression-suite).
+**10 risk categories** (accuracy, reasoning, edge cases, hallucination,
+consistency, robustness, safety, data validation, **agent** tool-use, and
+**red-team** jailbreaks) — emitted as YAML that drops straight into
+[`prompt-regression-suite`](https://github.com/madhavpati23/prompt-regression-suite).
 
 This is a *prompt-driven test-design accelerator*: instead of hand-writing every
 case, you describe the feature — a short phrase, or a **full user story with
@@ -20,14 +22,15 @@ is enforced by the tool and CI so "did we test enough?" is policy, not opinion.
 ```text
 $ python -m test_case_generator generate --feature "password reset email" --out-dir prompts
 Generator   : mock
-Generated   : 13 raw case(s)
-Valid       : 13
-Wrote 13 case(s) across 7 file(s) to prompts
+Generated   : 15 raw case(s)
+Valid       : 15
+Wrote 15 case(s) across 8 file(s) to prompts
 ------------------------------------------------------------
   COVERAGE vs STANDARD
 ------------------------------------------------------------
   [ok  ] edge_cases       2/2   (REQUIRED)
   [ok  ] hallucination    2/2   (REQUIRED)
+  [ok  ] red_team         2/2   (REQUIRED)
   [ok  ] robustness       2/1   (REQUIRED)
   [ok  ] safety           3/3   (REQUIRED)
   ...
@@ -102,18 +105,28 @@ GitHub Actions workflow both do this). The bar lives in
 [`taxonomy.py`](src/test_case_generator/taxonomy.py); the rationale is in the
 [playbook](TESTING_PLAYBOOK.md).
 
-## Score a prompt
+## Score a prompt (or agent instructions)
 
 Check how well-written a prompt is — a score, a one-line verdict, its strengths,
-and **at most 3** "consider…" pointers (none if it's already strong; no lecturing):
+**at most 3** "consider…" pointers (none if it's already strong; no lecturing),
+and a concrete **suggested rewrite**.
+
+Prompts are scored on 7 dimensions: clear task, role/domain, **audience &
+purpose**, key details, constraints (tone & length), output format, and
+example/style. The rewrite is task-type aware — for common types
+(training, email, report) it emits a structured, "Please include:" prompt close
+to an LLM rewrite; otherwise a concrete generic rewrite.
 
 ```bash
 test-case-generator assess-prompt --text "You are an editor. Rewrite this in 3 sentences as JSON."
 # Prompt score : 100/100  (Strong)
-test-case-generator assess-prompt --file my_prompt.txt --llm   # Claude critique (needs API key)
+test-case-generator assess-prompt --file my_prompt.txt --llm           # Claude critique (needs API key)
+test-case-generator assess-prompt --instructions --text "<agent config>" # score agent instructions instead
 ```
 
-Heuristic by default (offline); `--llm` uses Claude for a short critique.
+`--instructions` scores an agent's instructions (role, tools, permissions,
+refusal rules, data sources, …). Heuristic by default (offline); `--llm` uses
+Claude for a tailored critique and rewrite.
 
 ## Config-driven runs (`suite.yaml`)
 
@@ -163,11 +176,15 @@ Each case is `{id, category, prompt, validator, args, severity, status, reviewer
 
 | Field | Allowed values |
 |-------|----------------|
-| `category` | accuracy, reasoning, edge_cases, hallucination, consistency, robustness, safety, data_validation |
-| `validator` | `contains`, `not_contains`, `regex`, `equals_number`, `json_schema` |
+| `category` | accuracy, reasoning, edge_cases, hallucination, consistency, robustness, safety, data_validation, agent, red_team |
+| `validator` | `contains`, `not_contains`, `regex`, `equals_number`, `json_schema`, `tool_trace`, `llm_judge` |
+| `severity` | `critical`, `high`, `medium`, `low` |
+| `status` | `draft`, `reviewed`, `approved` |
 
 Validator args: `contains`/`not_contains` → `{value}`; `regex` → `{pattern}`;
-`equals_number` → `{value}`; `json_schema` → `{properties}`. Validation lives in
+`equals_number` → `{value}`; `json_schema` → `{properties}`; `tool_trace` →
+`{expected, ordered}` (agents — assert tool calls); `llm_judge` → `{criterion}`
+(semantic grading by a model). Validation lives in
 [`schema.py`](src/test_case_generator/schema.py) and is exercised by the tests.
 
 ## An honest note
