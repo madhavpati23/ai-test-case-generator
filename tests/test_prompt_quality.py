@@ -12,6 +12,13 @@ def test_weak_prompt_gets_low_score_and_capped_suggestions():
     assert len(s.suggestions) <= 3            # never naggy
 
 
+def test_weak_prompt_gets_example_shape_with_the_task():
+    s = assess("summarize this document")
+    assert s.example                                  # an example shape is offered
+    assert "Task: summarize this document" in s.example
+    assert "Output:" in s.example                     # fills a missing dimension
+
+
 def test_strong_prompt_scores_high_and_no_suggestions():
     prompt = (
         "You are a senior copy editor. Rewrite the paragraph below to be concise "
@@ -21,6 +28,7 @@ def test_strong_prompt_scores_high_and_no_suggestions():
     s = assess(prompt)
     assert s.score >= 85
     assert s.suggestions == []                # already strong -> stop, don't lecture
+    assert s.example == ""                    # no example needed
     assert s.level == "Strong"
 
 
