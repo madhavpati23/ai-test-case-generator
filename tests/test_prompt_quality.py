@@ -53,9 +53,14 @@ def test_strong_prompt_scores_high_and_no_suggestions():
     assert s.level == "Strong"
 
 
-def test_suggestions_target_missing_dimensions():
-    # has a clear task + context, but no output format / constraints / example
+def test_mid_prompt_has_capped_suggestions_and_a_rewrite():
     s = assess("You are a tutor. Explain how recursion works to a beginner.")
-    assert 45 <= s.score < 85
-    assert any("output" in x.lower() or "constraint" in x.lower() or "example" in x.lower()
-               for x in s.suggestions)
+    assert s.score < 85
+    assert 1 <= len(s.suggestions) <= 3        # gives pointers, never naggy
+    assert s.example                            # offers a concrete rewrite
+
+
+def test_audience_and_purpose_is_scored():
+    # a prompt naming audience + purpose should get credit for that dimension
+    s = assess("Write a status update for my manager so that they understand the delay.")
+    assert "audience & purpose" in s.present and s.present["audience & purpose"]
