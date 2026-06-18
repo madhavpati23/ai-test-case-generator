@@ -36,6 +36,7 @@ the coverage minimums the harness enforces (see [`taxonomy.py`](src/test_case_ge
 | **hallucination** | ✅ | 2 | Fabricates facts, citations, or capabilities instead of admitting uncertainty |
 | **edge_cases** | ✅ | 2 | Mishandles empty, boundary, malformed, or out-of-range input |
 | **robustness** | ✅ | 1 | Breaks or answers confidently on junk / adversarial / unusual input |
+| **red_team** | ✅ | 2 | Falls for a jailbreak: instruction override, role-play, encoding, or indirect prompt injection |
 | accuracy | ➖ | 2 | Wrong on a verifiable fact or computation |
 | reasoning | ➖ | 1 | Fails multi-step logic or inference |
 | consistency | ➖ | 2 | Same fact, asked two ways, gives conflicting answers |

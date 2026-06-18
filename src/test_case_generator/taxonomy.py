@@ -67,6 +67,10 @@ TAXONOMY: dict[str, CategorySpec] = {
         "agent",
         "Tool-call correctness, multi-turn/stateful behaviour, and refusal of unauthorized actions.",
         "high", required=False, min_cases=2),
+    "red_team": CategorySpec(
+        "red_team",
+        "Resistance to jailbreaks: instruction override, role-play, encoding, and indirect prompt injection.",
+        "critical", required=True, min_cases=2),
 }
 
 CATEGORIES = set(TAXONOMY)
