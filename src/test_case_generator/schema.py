@@ -21,6 +21,8 @@ VALIDATOR_ARGS = {
     "regex": ["pattern"],
     "equals_number": ["value"],
     "json_schema": ["properties"],
+    "tool_trace": ["expected"],
+    "llm_judge": ["criterion"],
 }
 
 # Review lifecycle. Generated cases start as `draft`; only `approved` cases
