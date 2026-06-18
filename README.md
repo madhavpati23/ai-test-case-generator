@@ -5,8 +5,10 @@ risk categories, including edge cases and safety probes — emitted as YAML that
 drops straight into [`prompt-regression-suite`](https://github.com/madhavpati23/prompt-regression-suite).
 
 This is a *prompt-driven test-design accelerator*: instead of hand-writing every
-case, you describe the feature and get a structured first draft of the suite
-(scenario generation + edge-case coverage), then refine. Every generated case is
+case, you describe the feature — a short phrase, or a **full user story with
+acceptance criteria** — and get a structured first draft of the suite (scenario
+generation + edge-case coverage), then refine. With the Claude backend, a user
+story yields a test per acceptance criterion plus the risk-category cases. Every generated case is
 **validated against a schema before it's written** — a flaky model can never slip
 a malformed case into your suite.
 

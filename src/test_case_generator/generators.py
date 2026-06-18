@@ -18,6 +18,18 @@ def slugify(text: str) -> str:
     return "-".join(words[:3]) or "feature"
 
 
+def short_label(text: str) -> str:
+    """Derive a short, readable label from a possibly-long feature or user story.
+
+    Lets a user paste a full user story (title + acceptance criteria) while the
+    deterministic mock keeps its generated prompts/IDs concise. The Claude
+    generator, by contrast, receives the full text.
+    """
+    first = next((ln.strip() for ln in text.splitlines() if ln.strip()), text.strip())
+    first = re.sub(r"^(title|feature|user story)\s*[:\-]\s*", "", first, flags=re.I)
+    return (first[:80].strip()) or "feature"
+
+
 class Generator(Protocol):
     name: str
 
@@ -38,7 +50,7 @@ class MockGenerator:
     name = "mock"
 
     def generate(self, feature: str, ai_type: str | None = None) -> list[dict[str, Any]]:
-        f = feature.strip()
+        f = short_label(feature)   # keep generated prompts/IDs readable for long stories
         s = slugify(f)
         refuse = "can'?t|cannot|won'?t|not able|not allowed"
         cases = [
@@ -107,9 +119,11 @@ class MockGenerator:
 
 
 _SYSTEM = """You are a senior QA engineer who designs test cases for software and AI/LLM features.
-Given a feature description, produce a diverse set of test cases that probe accuracy, reasoning,
-edge cases, hallucination, consistency, robustness, safety, and structured-output (data_validation)
-behaviour where relevant.
+Given a feature description -- which may be a short phrase OR a full user story with acceptance
+criteria -- produce a diverse set of test cases. If acceptance criteria are present, write at least
+one test per criterion (a positive case proving it's met, and a negative/edge case around it), THEN
+add cases that probe accuracy, reasoning, edge cases, hallucination, consistency, robustness, safety,
+red_team, and structured-output (data_validation) behaviour where relevant.
 
 Reply with ONLY a JSON object of this exact shape (no prose, no markdown fence):
 {"cases": [{"id": "<kebab-case-unique>", "category": "<one of: accuracy, reasoning, edge_cases, hallucination, consistency, robustness, safety, data_validation, agent, red_team>", "prompt": "<the prompt to send to the system under test>", "validator": "<one of: contains, not_contains, regex, equals_number, json_schema, tool_trace, llm_judge>", "args": {<validator-specific>}, "severity": "<one of: critical, high, medium, low>"}]}
