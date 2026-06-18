@@ -1,4 +1,24 @@
-from test_case_generator.prompt_quality import assess
+from test_case_generator.prompt_quality import assess, assess_instructions
+
+
+def test_instructions_weak_lists_missing_dimensions():
+    s = assess_instructions("Help the user.")
+    assert s.score < 65
+    assert s.example                                  # offers an instructions template
+    assert any("permission" in x.lower() or "tool" in x.lower() or "refuse" in x.lower()
+               for x in s.suggestions)
+
+
+def test_instructions_strong_scores_high():
+    instr = (
+        "You are a Jira support agent whose goal is to help triage tickets. "
+        "Tools you may use: search_issues, get_issue, update_issue; use update_issue only after confirming. "
+        "You must not delete issues or act outside the user's project; only authorized actions are allowed. "
+        "Refuse unauthorized or out-of-scope requests. Use the Jira API as the source of truth and cite issue keys. "
+        "Respond in concise bullet points. If information is missing, ask rather than guess."
+    )
+    s = assess_instructions(instr)
+    assert s.score >= 85 and s.suggestions == []
 
 
 def test_empty_prompt_scores_zero():
