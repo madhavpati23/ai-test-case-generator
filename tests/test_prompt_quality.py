@@ -32,11 +32,12 @@ def test_weak_prompt_gets_low_score_and_capped_suggestions():
     assert len(s.suggestions) <= 3            # never naggy
 
 
-def test_weak_prompt_gets_example_shape_with_the_task():
+def test_weak_prompt_gets_a_concrete_rewrite():
     s = assess("summarize this document")
-    assert s.example                                  # an example shape is offered
-    assert "Task: summarize this document" in s.example
-    assert "Output:" in s.example                     # fills a missing dimension
+    assert s.example                                  # a rewrite is offered
+    assert "<" not in s.example                        # concrete, no <slot> placeholders
+    assert "summarize this document" in s.example.lower()   # keeps the user's task
+    assert "You are" in s.example                      # adds a sensible role
 
 
 def test_strong_prompt_scores_high_and_no_suggestions():
