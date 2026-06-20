@@ -112,29 +112,6 @@ GitHub Actions workflow both do this). The bar lives in
 [`taxonomy.py`](src/test_case_generator/taxonomy.py); the rationale is in the
 [playbook](TESTING_PLAYBOOK.md).
 
-## Score a prompt (or agent instructions)
-
-Check how well-written a prompt is — a score, a one-line verdict, its strengths,
-**at most 3** "consider…" pointers (none if it's already strong; no lecturing),
-and a concrete **suggested rewrite**.
-
-Prompts are scored on 7 dimensions: clear task, role/domain, **audience &
-purpose**, key details, constraints (tone & length), output format, and
-example/style. The rewrite is task-type aware — for common types
-(training, email, report) it emits a structured, "Please include:" prompt close
-to an LLM rewrite; otherwise a concrete generic rewrite.
-
-```bash
-test-case-generator assess-prompt --text "You are an editor. Rewrite this in 3 sentences as JSON."
-# Prompt score : 100/100  (Strong)
-test-case-generator assess-prompt --file my_prompt.txt --llm           # Claude critique (needs API key)
-test-case-generator assess-prompt --instructions --text "<agent config>" # score agent instructions instead
-```
-
-`--instructions` scores an agent's instructions (role, tools, permissions,
-refusal rules, data sources, …). Heuristic by default (offline); `--llm` uses
-Claude for a tailored critique and rewrite.
-
 ## Config-driven runs (`suite.yaml`)
 
 For repeatable, reviewable runs, declare the feature in a config file checked in
